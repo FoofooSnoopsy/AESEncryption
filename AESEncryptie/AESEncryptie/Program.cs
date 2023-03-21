@@ -99,17 +99,13 @@ namespace AESEncryptie
 
                     ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
 
-                    using (var ms = new System.IO.MemoryStream())
+                    using var ms = new System.IO.MemoryStream();
+                    using var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
+                    using (var sw = new System.IO.StreamWriter(cs))
                     {
-                        using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
-                        {
-                            using (var sw = new System.IO.StreamWriter(cs))
-                            {
-                                sw.Write(plainText);
-                            }
-                            encrypted = ms.ToArray();
-                        }
+                        sw.Write(plainText);
                     }
+                    encrypted = ms.ToArray();
                 }
                 return Convert.ToBase64String(encrypted);
             }
