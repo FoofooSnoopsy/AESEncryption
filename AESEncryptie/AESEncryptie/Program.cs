@@ -7,6 +7,7 @@ using System.Text;
 using static System.Net.Mime.MediaTypeNames;
 using System.Threading;
 using Aes = System.Security.Cryptography.Aes;
+using System.Reflection;
 
 namespace AESEncryptie
 {
@@ -14,30 +15,54 @@ namespace AESEncryptie
     {
         static void Main(string[] args)
         {
-            Console.Write("Enter your credit card number: ");
-            string creditCardNumber = Console.ReadLine();
+            try
+            {
+                Console.Write("Enter your credit card number: ");
+                string creditCardNumber = Console.ReadLine();
+                if (creditCardNumber == null && creditCardNumber.All(char.IsDigit) == false)
+                {
+                    Console.Write("Je moet wel iets geldigs invullen");
+                    return;
+                }
+                if (LuhnCheck(creditCardNumber) == false)
+                {
+                    Console.Write("Dit is geen geldig nummer");
+                    return;
+                }
 
-            byte[] key = GenerateRandomKey(); // replace with your own key
-            byte[] iv = GenerateRandomIV(); // replace with your own initialization vector
-            string Key = "";
-            string Iv = "";
-            string encryptedCreditCardNumber = EncryptString(creditCardNumber, key, iv);
+                byte[] key = GenerateRandomKey(); // replace with your own key
+                byte[] iv = GenerateRandomIV(); // replace with your own initialization vector
+                string Key = "";
+                string Iv = "";
+                string encryptedCreditCardNumber = EncryptString(creditCardNumber, key, iv);
 
-            Console.WriteLine("Your encrypted credit card number is: " + encryptedCreditCardNumber);
-            foreach (var item in key)
-                Key += item;
+                Console.WriteLine("Your encrypted credit card number is: " + encryptedCreditCardNumber);
+                foreach (var item in key)
+                    Key += item;
 
-            foreach (var item in iv)
-                Iv += item;
+                foreach (var item in iv)
+                    Iv += item;
 
-            Console.WriteLine("The key is: " + Key);
-            Console.WriteLine("The iv is: " + Iv);
+                Console.WriteLine("The key is: " + Key);
+                Console.WriteLine("The iv is: " + Iv);
+            }
+            catch (Exception)
+            {
+
+                Console.WriteLine( "Misschien heb je iets verkeerd ingevuld?");
+            }
+
         }
 
         static string EncryptString(string plainText, byte[] key, byte[] iv)
         {
             try
             {
+                if (plainText.All(char.IsDigit) == false)
+                {
+                    
+                    return "Je moet wel iets geldigs invullen";
+                }
                 byte[] encrypted;
 
                 using (Aes aes = Aes.Create())
@@ -88,5 +113,36 @@ namespace AESEncryptie
                 return iv;
             }
         }
+
+        static bool LuhnCheck(string creditCardNumber)
+        {
+            int sum = 0;
+            bool isSecondDigit = false;
+
+            // Traverse the credit card number from right to left
+            for (int i = creditCardNumber.Length - 1; i >= 0; i--)
+            {
+                if (char.IsDigit(creditCardNumber[i]))
+                {
+                    int digit = int.Parse(creditCardNumber[i].ToString());
+
+                    if (isSecondDigit)
+                    {
+                        digit *= 2;
+
+                        if (digit > 9)
+                        {
+                            digit -= 9;
+                        }
+                    }
+
+                    sum += digit;
+                    isSecondDigit = !isSecondDigit;
+                }
+            }
+
+            return sum % 10 == 0;
+        }
+
     }
 }
