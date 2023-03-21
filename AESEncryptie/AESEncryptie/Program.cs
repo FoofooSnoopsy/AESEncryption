@@ -8,6 +8,8 @@ using static System.Net.Mime.MediaTypeNames;
 using System.Threading;
 using Aes = System.Security.Cryptography.Aes;
 using System.Reflection;
+using Microsoft.EntityFrameworkCore;
+using System.IO;
 
 namespace AESEncryptie
 {
@@ -19,14 +21,32 @@ namespace AESEncryptie
             {
                 Console.Write("Enter your credit card number: ");
                 string creditCardNumber = Console.ReadLine();
-                if (creditCardNumber == null && creditCardNumber.All(char.IsDigit) == false)
+                if (creditCardNumber == null || creditCardNumber.All(char.IsDigit) == false)
                 {
-                    Console.Write("Je moet wel iets geldigs invullen");
+                    Console.WriteLine("Je moet wel iets geldigs invullen");
+                    return;
+                }
+                Console.Write("Enter your first name: ");
+                string fname = Console.ReadLine();
+                Console.Write("Enter your last name: ");
+                string lname = Console.ReadLine();
+                Console.Write("Enter your street: ");
+                string street = Console.ReadLine();
+                Console.Write("Enter your housenumber: ");
+                string housenum = Console.ReadLine();
+                Console.Write("Enter your postalcode: ");
+                string postalcode = Console.ReadLine();
+                Console.Write("Enter your city: ");
+                string city = Console.ReadLine();
+
+                if (fname == null || lname == null || street == null || housenum == null || postalcode == null || city == null)
+                {
+                    Console.WriteLine("Je moet wel iets geldigs invullen");
                     return;
                 }
                 if (LuhnCheck(creditCardNumber) == false)
                 {
-                    Console.Write("Dit is geen geldig nummer");
+                    Console.WriteLine("Dit is geen geldig nummer");
                     return;
                 }
 
@@ -35,21 +55,28 @@ namespace AESEncryptie
                 string Key = "";
                 string Iv = "";
                 string encryptedCreditCardNumber = EncryptString(creditCardNumber, key, iv);
-
-                Console.WriteLine("Your encrypted credit card number is: " + encryptedCreditCardNumber);
                 foreach (var item in key)
                     Key += item;
 
                 foreach (var item in iv)
                     Iv += item;
 
+                using (var context = new DBContext())
+                {
+                    var person = new Person {FirstName = fname, LastName = lname, Street = street, HouseNumber = housenum , PostalCode = postalcode, City = city, CreditCard = encryptedCreditCardNumber, encryptionKey = Key, encryptionIV = Iv};
+                    context.People.Add(person);
+                    context.SaveChanges();
+                }
+
+                Console.WriteLine("Your encrypted credit card number is: " + encryptedCreditCardNumber);
                 Console.WriteLine("The key is: " + Key);
                 Console.WriteLine("The iv is: " + Iv);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
                 Console.WriteLine( "Misschien heb je iets verkeerd ingevuld?");
+                Console.WriteLine(ex.Message);
             }
 
         }
